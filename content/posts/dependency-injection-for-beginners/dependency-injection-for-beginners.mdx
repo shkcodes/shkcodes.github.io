@@ -1,0 +1,131 @@
+---
+title: Dependency Injection for Beginners
+date: 2020-03-28
+description: Defence Against the Dark Arts (abbreviated as DADA) is a subject taught at Hogwarts School of Witchcraft and Wizardry and Ilvermorny School of Witchcraft and Wizardry. In this class, students study and learn how to defend themselves against all aspects of the Dark Arts, including dark creatures, curses, hexes and jinxes (dark charms), and duelling.
+tags:
+  - Dependency Injection
+  - Android
+---
+
+You might have heard of dependency injection. It’s been one of the hot topics in the Android community for the past few years . So you look around on the internet, find articles about Dagger and are lost when people start mentioning Modules, Components, and Scopes. That is because those articles don’t do a very good job of explaining what is dependency injection (Thermosiphon anyone?) & why you need it.
+
+Before diving into such articles, you must have a clear understanding of why are you using dependency injection (DI) and what benefits does it provide you. As the [Principle of Applying Principles](http://www.fragiledeveloper.com/2017/05/the-principle-of-applying-principles.html) states, “The good and proper application of each principle, pattern and practice requires you to understand why you are doing what you’re doing”. So this article will try to answer the following questions :
+
+*   What is a dependency
+*   What is dependency injection
+*   Why should you use it
+
+
+* * *
+
+
+What is a dependency
+--------------------
+
+As you can infer from its English meaning, the word dependency indicates that a part of code depends on some other part of code. It could be either _loose coupling_ (where the code depends on an abstract class or interface) or _strong coupling_ (where the code depends on a concrete class). I believe examples provide a better understanding so lets see an example.
+
+```java:title=snippet_1
+Class A {
+
+   public int doSomeWork() {
+       B objectB = new B();
+       int result = objectB.getResult();
+       int finalResult = result * 2;
+       return finalResult;
+   }
+
+}
+```
+
+The function `doSomeWork` uses some functionality from class B. So class A has a dependency on class B. If class B required some constructor parameters, it would become the responsibility of `doSomeWork` to provide those parameters.
+
+```java:title=snippet_2
+class A {
+
+   public int doSomeWork(int p1, int p2, String p3) {
+       B objectB = new B(p1, p2, p3);
+       int result = objectB.getResult();
+       int finalResult = result * 2;
+       return finalResult;
+   }
+
+}
+```
+
+If the function depended on more objects each of which required multiple constructor parameters, the function `doSomeWork` would become too unwieldy. Instead of just doing the specific thing it was meant to do, it would also contain code for creation of the needed objects. As you can see, it is not really wise to write our code this way. Now onto our second question, what is dependency injection.
+
+* * *
+
+What is dependency injection
+----------------------------
+
+The English language to our rescue again! Dependency injection is the act of injecting dependencies. Well, injection is just a fancy word for providing. So dependency injection is the act of providing dependencies.
+
+Hence, instead of this,
+
+```java:title=snippet_3
+class A {
+
+   public int doSomeWork(int p1, int p2, String p3) {
+       B objectB = new B(p1, p2, p3);
+       int result = objectB.getResult();
+       int finalResult = result * 2;
+       return finalResult;
+   }
+
+}
+
+```
+
+we could have this
+
+```java:title=snippet_4
+class A {
+
+    private B objectB;
+
+    public A(B objectB) {
+        this.objectB = objectB;
+    }
+
+    public int doSomeWork() {
+        int result = objectB.getResult();
+        int finalResult = result * 2;
+        return finalResult;
+    }
+
+}
+```
+
+That’s it! You just performed dependency injection. The dependency (Class B) was injected (as a constructor parameter) into the code which needed it (Class A). All the fancy DI frameworks and libraries try to help you in making your code less like *snippet_3* and more like *snippet_4*. Well, why would you want to do that? Let’s move on to our next section to find out.
+
+* * *
+
+Why should you use it
+---------------------
+
+1) **Reducing responsibility** : In code *snippet_4*, the function `doSomeWork` is not responsible for the creation `objectB`. It does not care how `objectB` is provided or who provides it. It’s only responsibility is to ‘do some work’, and the fewer responsibilities a piece of code has, the less error prone it is.
+
+2) **Easier testing** : In code *snippet_3*, `doSomeWork` is explicitly responsible for creating the `objectB`. For testing, the creation of object should be done outside the code to be tested. As an example, we could pass a fake `objectB` in *snippet_4* to test `doSomeWork`.
+
+3) **We don’t need to change unrelated code** : In future, if we change B (say, we add a constructor parameter), it will require us to change `doSomeWork` too. If we had initialized B in 10 places throughout our code, it would have required us to change the code in 10 different places If we use dependency injection, we will just modify the part where we initialized B.
+
+4) **Improved code reusability :** If you use dependency injection, you just need to initialize B just once. You can then just pass that object to whatever part of code that requires it. This makes our code more reusable.
+
+* * *
+
+What next
+---------
+
+For a more concrete tutorial about dependency injection on Android, check out [this](https://www.youtube.com/watch?v=Qwk7ESmaCq0&list=PLuR1PJnGR-Ih-HXnGSpnqjdhdvqcwhfFU) playlist by TwistedEquations. You can see how creating each dependency manually can get quickly get out of hand.
+
+I would recommend you to stay away from Dagger Android till you get comfortable with @Module, @Provides, @Inject and @Component. Although it introduces a lot of stuff to reduce the boilerplate required for Dagger, you need to have a clear understanding of the aforementioned concepts before you try it. Learning Dagger and Dagger Android together would be too much for a beginner.
+
+* * *
+
+So that’s it. I have tried keeping this article simple and not use any of the technical terms usually used while explaining dependency injection. Thanks for reading my first article!
+
+* * *
+* * *
+
+*This article was originally published on [Medium](https://blog.usejournal.com/dependency-injection-for-beginners-56c643363e92)*

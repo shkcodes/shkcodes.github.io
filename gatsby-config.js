@@ -1,34 +1,48 @@
 module.exports = {
-  siteMetadata: {
-    title: `Gatsby Default Starter`,
-    description: `Kick off your next, great Gatsby project with this default starter. This barebones starter ships with the main Gatsby configuration files you might need.`,
-    author: `@gatsbyjs`,
-  },
-  plugins: [
-    `gatsby-plugin-react-helmet`,
-    {
-      resolve: `gatsby-source-filesystem`,
-      options: {
-        name: `images`,
-        path: `${__dirname}/src/images`,
-      },
+    siteMetadata: {
+        siteTitle: `shkcodes`,
+        // Default title of the page
+        siteTitleAlt: `shkcodes`,
+        // Can be used for e.g. JSONLD
+        siteHeadline: `Home of shkcodes`,
+        // Will be used to generate absolute URLs for og:image etc.
+        siteUrl: `https://minimal-blog.lekoarts.de`,
+        // Used for SEO
+        siteDescription: `home of shkcodes`,
+        siteLanguage: `en`,
+        siteImage: `/bg1.jpg`,
+        author: `@shkcodes`,
     },
-    `gatsby-transformer-sharp`,
-    `gatsby-plugin-sharp`,
-    {
-      resolve: `gatsby-plugin-manifest`,
-      options: {
-        name: `gatsby-starter-default`,
-        short_name: `starter`,
-        start_url: `/`,
-        background_color: `#663399`,
-        theme_color: `#663399`,
-        display: `minimal-ui`,
-        icon: `src/images/gatsby-icon.png`, // This path is relative to the root of the site.
-      },
-    },
-    // this (optional) plugin enables Progressive Web App + Offline functionality
-    // To learn more, visit: https://gatsby.dev/offline
-    // `gatsby-plugin-offline`,
-  ],
+    plugins: [
+        {
+            resolve: `@lekoarts/gatsby-theme-minimal-blog`,
+            options: {
+                showLineNumbers: false,
+                navigation: [
+                    {
+                        title: `Blog`,
+                        slug: `/blog`
+                    },
+                    {
+                        title: `About`,
+                        slug: `/about`
+                    }
+                ],
+                externalLinks: [
+                    {
+                        name: `Twitter`,
+                        url: `https://twitter.com/SHKM9`
+                    },
+                    {
+                        name: `Github`,
+                        url: `https://github.com/shkcodes`
+                    }
+                ]
+            }
+
+        },
+        // this (optional) plugin enables Progressive Web App + Offline functionality
+        // To learn more, visit: https://gatsby.dev/offline
+        `gatsby-plugin-offline`,
+    ],
 }
