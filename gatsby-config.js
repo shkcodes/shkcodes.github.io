@@ -1,6 +1,6 @@
 module.exports = {
     siteMetadata: {
-        siteTitle: `shkcodes`,
+        siteTitle: `Shashank Mishra`,
         // Default title of the page
         siteTitleAlt: `shkcodes`,
         // Can be used for e.g. JSONLD
