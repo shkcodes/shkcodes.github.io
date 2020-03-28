@@ -1,0 +1,188 @@
+---
+title: Dependency Injection: Dagger and Koin
+date: 2020-03-28
+description: We take a look at how Dagger and Koin's APIs compare to one another
+tags:
+  - Dependency Injection
+  - Android
+---
+
+
+Dependency Injection: Dagger and Koin | Fueled
+==============================================
+
+[![Shashank Mishra](https://miro.medium.com/fit/c/96/96/1*TspJXwAN4VROCit6swmZgg.jpeg)](https://medium.com/@shkcodes?source=post_page-----fb58fb1765bb----------------------)[Shashank Mishra](https://medium.com/@shkcodes?source=post_page-----fb58fb1765bb----------------------)Follow[Jan 8](https://medium.com/@shkcodes/dependency-injection-dagger-and-koin-fueled-fb58fb1765bb?source=post_page-----fb58fb1765bb----------------------) · 5 min read
+
+<img class="s t u ge ai" src="https://miro.medium.com/max/1536/0\*-MizUX8BuH7mRJXU.png" width="768" height="442" srcSet="https://miro.medium.com/max/1104/0\*-MizUX8BuH7mRJXU.png 552w, https://miro.medium.com/max/1400/0\*-MizUX8BuH7mRJXU.png 700w" sizes="700px" role="presentation"/>
+
+Dependency Injection on Android has been a hot button topic for quite a while now. Opinions range from not using DI at all, to using manual DI, to swearing by Dagger, to using the host of new libraries that have been popping up.
+
+I explored Koin recently and wanted to share some thoughts regarding the experience. It also led me to have a better understanding of Dagger and DI in general. So, let’s get down to it! First, I will lay down a basic comparison of how we perform DI with both the libraries.
+
+**Disclaimer**_:_ This article assumes you are familiar with the concept of DI and Dagger. If not, feel free to go through [this](https://blog.usejournal.com/dependency-injection-for-beginners-56c643363e92) post. It also links to a video series which helped me immensely in understanding Dagger.
+
+Modules
+=======
+
+Both the libraries treat modules a bit differently. In the case of Dagger, you’ll need modules to provide objects whose constructor cannot be annotated with `@Inject`. But for Koin, all dependencies _must_ be declared in a module.
+
+So looking at Koin first, here’s how you would define a module:
+
+```kotlin
+module {
+    single { PreferenceManager.getDefaultSharedPreferences(context = get()) }
+
+    // Others...
+    // Recreates dependency everytime (don't actually do this with Glide, I am just using this as an example!)
+    factory { Glide.with(application = get()) }
+    // Scoped to the viewmodel's lifecycle.
+    viewModel { UserProfileViewModel(userPostsUseCase = get()) }
+}
+```
+
+On the other hand, here’s what we got for Dagger:
+
+```kotlin
+@Module
+class AppModule {
+
+    @Provides
+    @Singleton
+    fun providePreferences(application: Application): SharedPreferences {
+        return PreferenceManager.getDefaultSharedPreferences(application)
+    }
+
+    @Provides
+    fun provideGlideRequestManager(application: Application): RequestManager {
+        return Glide.with(application)
+    }
+
+ }
+```
+
+As you can see right away, the code we have to write is much more verbose for Dagger. And I am not even including the code for providing ViewModels 😅
+
+Components
+==========
+
+Next, let’s take a look at components.
+
+Koin doesn’t have Components per se. You just have this:
+
+```kotlin
+@Module
+    startKoin {
+        androidContext(this@MyApplication)
+        androidLogger(DEBUG)
+        modules(listOf(appModule, networkModule, cacheModule))
+    }
+```
+
+The `startKoin` method which takes in a list of your modules (and optionally, an Android context and logging configuration, amongst other things).
+
+In Dagger land, things again get a tad verbose. The Component plays a pretty important role as it defines our injection targets and the objects we will be providing. There is also the provision of providing external dependencies to the Dagger graph (the `application` class in this case).
+
+```kotlin
+@Singleton
+@Component(modules = [AppModule::class, NetworkModule::class, CacheModule::class])
+interface AppComponent {
+
+    val application: Application
+
+    fun inject(activity: MainActivity)
+
+    @Component.Builder
+    interface Builder {
+
+        @BindsInstance
+        fun application(application: Application): Builder
+
+        fun build(): AppComponent
+
+    }
+
+}
+```
+
+To actually use it, we will need to build the component:
+
+```kotlin
+val component: AppComponent by lazy {
+    DaggerAppComponent.builder().application(this).build()
+}
+```
+
+Clients
+=======
+
+Now for the most interesting part! Here we will dive into what primarily differentiates Dagger and Koin and get to know a bit more about DI (and Service Locators too).
+
+Constructor Injection
+---------------------
+
+Let’s take a look at constructor injection first. With Koin, you simply write your constructors as you normally would. No need for any annotations:
+
+```kotlin
+class UserPrefs(private val sharedPreferences: SharedPreferences)
+```
+
+However, in the case of Dagger, we see that we need to annotate the class with `@Inject`. Also, we need to use the verbose variant of class constructor:
+
+```kotlin
+class UserPrefs @Inject constructor(private val prefs: SharedPreferences)
+```
+
+Is that it? Well, no. If the class had 3 more dependencies, in the case of Koin, we would have to find our module and convert:
+
+```noLineNumbers
+module {
+    viewModel { ProfileViewModel(get()) }
+}
+```
+
+to
+
+```noLineNumbers
+module {
+    viewModel { ProfileViewModel(get(), get(), get(), get()) }
+}
+```
+
+And if the dependencies of any of these 4 classes had changed, well, you guessed it-add the `get()` for them as well. This does seem like a whole lot of manual work, and Jake Wharton certainly seems to agree when he tweeted [this](https://twitter.com/jakewharton/status/1138111189299449856). And it does make sense. It can be easily seen how this can become untenable in big projects.
+
+And how does Dagger fare in this regard? Well, it’s as easy as adding `@Inject constructor(...)` to the class. This scales really well for bigger projects as you don't have to go around hunting for modules and modify them.
+
+Member Injection
+----------------
+
+When injecting members, Dagger and Koin provide very similar (but also very different 🙃) APIs.
+
+Going with Koin first, we see that we use `by inject()` to inject members.
+
+It is kind-of similar for Dagger, where we get a hold of the component and call `inject` manually.
+
+Looking at these examples, it seems that both Koin and Dagger seem to be acting as Service Locators. For a refresher, here is the difference between DI and SL as stated by [Martin Fowler](https://martinfowler.com/articles/injection.html#UsingAServiceLocator):
+
+> _“With service locator the application class asks for it explicitly by a message to the locator. With injection there is no explicit request, the service appears in the application class — hence the inversion of control.”_
+
+In both our examples, the Fragment is the one requesting the dependencies. So does that mean that Dagger isn’t a DI library? Well, no. If you stop looking at it from strictly an Android perspective, you will see that we **can** perform member injection from outside a class with Dagger but not for Koin. Let’s take a look at another example:
+
+This is what I meant when I wrote that they have similar but different APIs. We are able to satisfy member dependencies from outside the class. In Android, we do use Dagger as a service locator, but that is only because of how the Activities and Fragments are designed. This is one of the primary confusions that I had, seeing how similar member injection is for both the libraries.
+
+You might say, “OK, if I use constructor injection to a bare minimum, then I should be good with using Koin, right?” Ehhhh…. not really, no. In fact, you should be doing the opposite. Member injection should be minimized in Android. You should write as much of the code you can in constructor injected types, and only use member injection to integrate your code with the Android components.
+
+Conclusion
+==========
+
+I wrote this post with the intention of shedding more light on the definitions of service locator, dependency injection, and how Dagger and Koin fit those definitions.
+
+Koin is definitely easier to learn and provides you with quicker build times. I have tried it in a few small to mid-sized projects and it has been a great experience using it. However, the lack of compile-time safety was missed; given that I am so used to it using Dagger for so long. Also, manual graph maintenance can start to become bothersome after a certain point. While there is no denying that learning Dagger is a monumental task and it does affect your build speeds, it does offer some sweet benefits. In the end, both Koin and Dagger are just tools. You will need to decide which one fits your needs and I hope this article will be at least of little help in deciding which one to go with!
+
+If you are interested in learning more, check out these great resources which helped me develop a better understanding of the topics discussed in this article.
+
+*   [Danny Preussler’s](https://www.youtube.com/watch?v=eUKtxzqLyKM) [Talk from Droidcon Berlin](https://www.youtube.com/watch?v=eUKtxzqLyKM)
+*   [Arnaud Giuliani’s](https://www.youtube.com/watch?v=chCsNkjotfc) [excellent introduction to Koin](https://www.youtube.com/watch?v=chCsNkjotfc)
+*   [My Reddit thread on this topic](https://redd.it/d1b4i1)
+
+* * *
+

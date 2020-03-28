@@ -74,6 +74,11 @@ export default {
             background: `#f7df1e`,
             color: `black`,
         },
+        'pre[class~="language-kotlin"]:before': {
+            content: `"kotlin"`,
+            background: `#f7df1e`,
+            color: `black`,
+        },
         'pre[class~="language-js"]:before': {
             content: `"js"`,
             background: `#f7df1e`,
