@@ -1,0 +1,1 @@
+{"data":{"minimalBlogConfig":{"basePath":"/","blogPath":"/blog","postsPath":"content/posts","pagesPath":"content/pages","tagsPath":"/tags","externalLinks":[{"name":"Twitter","url":"https://twitter.com/SHKM9"},{"name":"Github","url":"https://github.com/shkcodes"}],"navigation":[{"title":"Blog","slug":"/blog"},{"title":"About","slug":"/about"}],"showLineNumbers":true}}}
